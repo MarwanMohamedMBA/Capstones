@@ -1,146 +1,26 @@
+from logic import (
+    load_data,
+    tag_risk_level,
+    filter_by_vaccine,
+    filter_overdue_patients,
+    filter_by_age_group,
+    filter_by_last_vaccine_date,
+    generate_summary_report
+)
+
+from utils import (
+    print_banner,
+    main_menu,
+    filter_menu,
+    export_to_csv,
+    export_to_json,
+    export_report_to_txt,
+    export_report_to_json
+)
+from charts import plot_vaccine_gaps, plot_age_groups
+from generate_fake_data import save_fake_data_csv
+from colorama import Fore
 import pandas as pd
-from colorama import Fore, Style, init
-import os
-from datetime import datetime
-
-init(autoreset=True)
-os.makedirs("exports", exist_ok=True)
-
-def print_banner():
-    print(Fore.CYAN + """
-===================================
-  🩺 Patient Intelligence App 🧠
-===================================
-""")
-
-def load_data(file_name):
-    full_path = f"data/{file_name}"
-    if not os.path.exists(full_path):
-        print(Fore.RED + f"❌ File not found: {full_path}")
-        return None
-    try:
-        df = pd.read_csv(full_path)
-        required_cols = {"Patient Name", "DOB", "Next Due", "Vaccine Type"}
-        if not required_cols.issubset(df.columns):
-            print(Fore.RED + "❌ Missing required columns in file.")
-            return None
-        print(Fore.GREEN + f"✅ Loaded {len(df)} records from {full_path}")
-        print(Fore.YELLOW + f"🧾 Columns: {', '.join(df.columns)}")
-        return df
-    except Exception as e:
-        print(Fore.RED + f"❌ Failed to load data: {e}")
-        return None
-
-def export_to_csv(df):
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_name = f"exports/export_{timestamp}.csv"
-    df.to_csv(file_name, index=False)
-    print(Fore.GREEN + f"\n✅ Exported to {file_name}")
-
-def export_to_json(df):
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_name = f"exports/export_{timestamp}.json"
-    df.to_json(file_name, orient="records", indent=2)
-    print(Fore.GREEN + f"\n✅ Exported to {file_name}")
-
-def tag_risk_level(df):
-    today = pd.to_datetime("today").normalize()
-    df["Next Due"] = pd.to_datetime(df["Next Due"], errors="coerce")
-    df["DOB"] = pd.to_datetime(df["DOB"], errors="coerce")
-    df["Age"] = (today - df["DOB"]).dt.days // 365
-
-    def get_risk(row):
-        overdue_days = (today - row["Next Due"]).days
-        age = row["Age"]
-        if overdue_days > 365 or age >= 70:
-            return "High"
-        elif overdue_days > 0 or 40 <= age < 70:
-            return "Medium"
-        else:
-            return "Low"
-
-    df["Risk Level"] = df.apply(get_risk, axis=1)
-    print(Fore.GREEN + "✅ Risk levels tagged.")
-    return df
-
-def main_menu():
-    print(Fore.MAGENTA + "\nMain Menu:")
-    print(Fore.CYAN + "1. View all patients")
-    print(Fore.CYAN + "2. Filter patients")
-    print(Fore.CYAN + "3. Export last filtered results")
-    print(Fore.CYAN + "4. Show high-risk patients")
-    print(Fore.CYAN + "5. Exit")
-
-def filter_menu():
-    print(Fore.MAGENTA + "\nFilter Options:")
-    print(Fore.CYAN + "a. Filter by vaccine type")
-    print(Fore.CYAN + "b. Filter by overdue status")
-    print(Fore.CYAN + "c. Filter by age group")
-    print(Fore.CYAN + "d. Filter by last vaccine date")
-    print(Fore.CYAN + "x. Return to main menu")
-
-def filter_by_vaccine(df):
-    vaccine_types = df["Vaccine Type"].dropna().unique()
-    dataset_name = getattr(df, 'name', 'dataset')
-    print(Fore.MAGENTA + f"\n🧪 Available Vaccines in imported file ({dataset_name}):")
-    print(Fore.YELLOW + ", ".join(sorted(vaccine_types)))
-
-    vaccine = input("\nEnter vaccine type to filter by: ").strip()
-    filtered = df[df["Vaccine Type"].str.lower() == vaccine.lower()]
-    if filtered.empty:
-        print(Fore.RED + f"\n❌ No patients found for '{vaccine}'. Please choose from the list above.")
-    else:
-        print(Fore.YELLOW + f"\n🔎 {len(filtered)} patient(s) found for vaccine '{vaccine}':\n")
-        print(filtered.head(10))
-    return filtered
-
-def filter_overdue_patients(df):
-    today = pd.to_datetime("today").normalize()
-    df["Next Due"] = pd.to_datetime(df["Next Due"], errors='coerce')
-    filtered = df[df["Next Due"] < today]
-    print(Fore.YELLOW + f"\n⚠️ {len(filtered)} patient(s) are overdue for vaccines:\n")
-    print(filtered[["Patient Name", "Vaccine Type", "Next Due"]].head(10))
-    return filtered
-
-def filter_by_age_group(df):
-    df["DOB"] = pd.to_datetime(df["DOB"], errors='coerce')
-    today = pd.to_datetime("today").normalize()
-    df["Age"] = (today - df["DOB"]).dt.days // 365
-
-    print("\nAge groups:")
-    print("1. Under 30")
-    print("2. 30–60")
-    print("3. Over 60")
-    group = input("Choose an age group (1–3): ").strip()
-
-    if group == '1':
-        filtered = df[df["Age"] < 30]
-    elif group == '2':
-        filtered = df[(df["Age"] >= 30) & (df["Age"] <= 60)]
-    elif group == '3':
-        filtered = df[df["Age"] > 60]
-    else:
-        print(Fore.RED + "❌ Invalid selection.")
-        return pd.DataFrame()
-    
-    print(Fore.YELLOW + f"\n👥 {len(filtered)} patient(s) in selected age group:\n")
-    print(filtered[["Patient Name", "Age", "Vaccine Type"]].head(10))
-    return filtered
-
-def filter_by_last_vaccine_date(df):
-    while True:
-        date_str = input("Enter a date (YYYY-MM-DD): ").strip()
-        try:
-            cutoff = pd.to_datetime(date_str)
-            filtered = df[pd.to_datetime(df["Last Vaccine"], errors='coerce') >= cutoff]
-            print(Fore.YELLOW + f"\n🕒 {len(filtered)} patient(s) had vaccines after {date_str}:\n")
-            print(filtered[["Patient Name", "Last Vaccine", "Vaccine Type"]].head(10))
-            return filtered
-        except Exception as e:
-            print(Fore.RED + "❌ Invalid date format. Try again.")
-            continue
-
-# ---------- MAIN APP ----------
 
 def main():
     print_banner()
@@ -169,6 +49,7 @@ def main():
             while True:
                 filter_menu()
                 sub = input("Choose a filter option: ").strip().lower()
+
                 if sub == 'a':
                     last_filtered = filter_by_vaccine(df)
                 elif sub == 'b':
@@ -200,9 +81,26 @@ def main():
             print(high_risk[["Patient Name", "Age", "Next Due", "Risk Level"]].head(10))
 
         elif choice == '5':
+            count_str = input("How many fake patients to generate? (default: 250): ").strip()
+            count = int(count_str) if count_str.isdigit() else 250
+            save_fake_data_csv(count=count)
+
+        elif choice == '6':
+            report = generate_summary_report(df)
+            format_choice = input("Export as TXT or JSON? ").strip().lower()
+            if format_choice == "txt":
+                export_report_to_txt(report)
+            elif format_choice == "json":
+                export_report_to_json(report)
+            else:
+                print(Fore.RED + "❌ Invalid format. Type 'txt' or 'json'.")
+        elif choice == '7':
+            plot_vaccine_gaps(df)
+            plot_age_groups(df)
+
+        elif choice == '8':
             print(Fore.GREEN + "👋 Goodbye.")
             break
-
         else:
             print(Fore.RED + "❌ Invalid option. Try again.")
 
