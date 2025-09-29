@@ -1,0 +1,17 @@
+{
+  "Total Patients": 250,
+  "Overdue Patients": 76,
+  "Vaccine Breakdown": {
+    "Tetanus": 51,
+    "COVID": 49,
+    "HPV": 43,
+    "Hepatitis": 40,
+    "Flu": 35,
+    "MMR": 32
+  },
+  "Risk Levels": {
+    "Medium": 120,
+    "Low": 67,
+    "High": 63
+  }
+}

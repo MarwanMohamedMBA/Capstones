@@ -1,3 +1,17 @@
+"""
+📦 Patient Intelligence CLI App
+
+Main entry point for running the Patient Intelligence application.
+This app allows users to:
+- Load and validate a patient vaccination dataset
+- Tag patients by risk level based on age and overdue vaccine status
+- Apply filters (age group, vaccine type, overdue, last dose date)
+- Export filtered data to CSV or JSON
+- Generate and export summary reports
+- Plot charts by age group and vaccine gaps
+- Generate fake mock data for testing
+"""
+
 from logic import (
     load_data,
     tag_risk_level,
@@ -17,12 +31,19 @@ from utils import (
     export_report_to_txt,
     export_report_to_json
 )
+
 from charts import plot_vaccine_gaps, plot_age_groups
 from generate_fake_data import save_fake_data_csv
 from colorama import Fore
 import pandas as pd
 
+
 def main():
+    """
+    Main CLI loop for interacting with the patient app.
+    Handles loading data, showing menus, applying filters,
+    exporting results, generating reports, and visualizing charts.
+    """
     print_banner()
     last_filtered = None
 
@@ -94,6 +115,7 @@ def main():
                 export_report_to_json(report)
             else:
                 print(Fore.RED + "❌ Invalid format. Type 'txt' or 'json'.")
+
         elif choice == '7':
             plot_vaccine_gaps(df)
             plot_age_groups(df)
@@ -101,8 +123,10 @@ def main():
         elif choice == '8':
             print(Fore.GREEN + "👋 Goodbye.")
             break
+
         else:
             print(Fore.RED + "❌ Invalid option. Try again.")
+
 
 if __name__ == "__main__":
     main()

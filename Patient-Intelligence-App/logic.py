@@ -4,6 +4,15 @@ from datetime import datetime
 import os
 
 def load_data(file_name):
+    """
+    Load patient data from a CSV file in the 'data/' folder.
+
+    Args:
+        file_name (str): Name of the CSV file to load.
+
+    Returns:
+        DataFrame or None: The loaded DataFrame if successful, otherwise None.
+    """
     full_path = f"data/{file_name}"
     if not os.path.exists(full_path):
         print(Fore.RED + f"❌ File not found: {full_path}")
@@ -22,6 +31,15 @@ def load_data(file_name):
         return None
 
 def tag_risk_level(df):
+    """
+    Tag each patient with a risk level (High, Medium, Low) based on age and overdue days.
+
+    Args:
+        df (DataFrame): The patient dataset.
+
+    Returns:
+        DataFrame: The same DataFrame with a new 'Risk Level' column.
+    """
     today = pd.to_datetime("today").normalize()
     df["Next Due"] = pd.to_datetime(df["Next Due"], errors="coerce")
     df["DOB"] = pd.to_datetime(df["DOB"], errors="coerce")
@@ -42,6 +60,15 @@ def tag_risk_level(df):
     return df
 
 def filter_by_vaccine(df):
+    """
+    Filter patients by vaccine type (case-insensitive match).
+
+    Args:
+        df (DataFrame): Patient data.
+
+    Returns:
+        DataFrame: Filtered subset.
+    """
     vaccine_types = df["Vaccine Type"].dropna().unique()
     dataset_name = getattr(df, 'name', 'dataset')
     print(Fore.MAGENTA + f"\n🧪 Available Vaccines in imported file ({dataset_name}):")
@@ -57,6 +84,15 @@ def filter_by_vaccine(df):
     return filtered
 
 def filter_overdue_patients(df):
+    """
+    Filter patients whose 'Next Due' date is before today.
+
+    Args:
+        df (DataFrame): Patient data.
+
+    Returns:
+        DataFrame: Filtered overdue patients.
+    """
     today = pd.to_datetime("today").normalize()
     df["Next Due"] = pd.to_datetime(df["Next Due"], errors='coerce')
     filtered = df[df["Next Due"] < today]
@@ -65,6 +101,15 @@ def filter_overdue_patients(df):
     return filtered
 
 def filter_by_age_group(df):
+    """
+    Filter patients by age group: Under 30, 30–60, or Over 60.
+
+    Args:
+        df (DataFrame): Patient data.
+
+    Returns:
+        DataFrame: Filtered subset.
+    """
     df["DOB"] = pd.to_datetime(df["DOB"], errors='coerce')
     today = pd.to_datetime("today").normalize()
     df["Age"] = (today - df["DOB"]).dt.days // 365
@@ -87,6 +132,15 @@ def filter_by_age_group(df):
     return filtered
 
 def filter_by_last_vaccine_date(df):
+    """
+    Filter patients whose last vaccine was on or after a specific date.
+
+    Args:
+        df (DataFrame): Patient data.
+
+    Returns:
+        DataFrame: Filtered subset or empty DataFrame if invalid.
+    """
     try:
         date_str = input("Enter date (YYYY-MM-DD): ").strip()
         cutoff = pd.to_datetime(date_str)
@@ -99,6 +153,21 @@ def filter_by_last_vaccine_date(df):
         return pd.DataFrame()
 
 def generate_summary_report(df):
+    """
+    Generate a dictionary summary of patient stats.
+
+    Includes:
+    - Total number of patients
+    - Count of overdue patients
+    - Vaccine type distribution
+    - Risk level distribution
+
+    Args:
+        df (DataFrame): Patient dataset.
+
+    Returns:
+        dict: Summary report.
+    """
     today = pd.to_datetime("today").normalize()
     df["Next Due"] = pd.to_datetime(df["Next Due"], errors='coerce')
 
@@ -107,15 +176,9 @@ def generate_summary_report(df):
     vaccine_counts = df["Vaccine Type"].value_counts().to_dict()
     risk_counts = df["Risk Level"].value_counts().to_dict()
 
-    report = {
+    return {
         "Total Patients": total,
         "Overdue Patients": overdue,
         "Vaccine Breakdown": vaccine_counts,
         "Risk Levels": risk_counts
     }
-
-    print(Fore.YELLOW + "\n📊 Summary Report:")
-    for key, value in report.items():
-        print(f"{key}: {value}")
-
-    return report

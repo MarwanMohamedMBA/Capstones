@@ -8,6 +8,7 @@ This repository contains multiple real-world capstone projects focused on health
 A CLI powered tool analyze immunization data and generate smart outreach for high-risk patients. Includes data filtering, CSV/JSON/PDF export, optional charting, and Azure Function API integration.
 
 
+
 ---
 
 🎓 Built as part of my 6-month self-directed journey to master Python, Machine Learning and AI for real-world leadership impact in healthcare and retail operations.
