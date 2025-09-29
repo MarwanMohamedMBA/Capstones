@@ -4,7 +4,7 @@ This repository contains multiple real-world capstone projects focused on health
 
 ## 📁 Projects
 
-### [Patient Intelligence App](./Patient_intelligence_app) started 07/31/2025
+### [Patient Intelligence App](./Patient_intelligence_app) 07/31/2025-08/31/2025
 A CLI powered tool analyze immunization data and generate smart outreach for high-risk patients. Includes data filtering, CSV/JSON/PDF export, optional charting, and Azure Function API integration.
 
 
